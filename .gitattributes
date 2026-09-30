@@ -1,0 +1,22 @@
+# Normalise line endings in the repository. Without this, a Windows checkout can
+# commit CRLF, and `scripts/install_mmdet3d.sh` then fails on Linux/Kaggle with
+# "bash: $'\r': command not found" -- which looks like a broken script rather than
+# a line-ending problem.
+* text=auto
+
+# Shell scripts and Python must be LF everywhere.
+*.sh   text eol=lf
+*.py   text eol=lf
+*.toml text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+
+# Never line-ending-convert binaries. Most of these are gitignored, but marking them
+# costs nothing and prevents a future mistake from corrupting a checkpoint.
+*.pdf  binary
+*.png  binary
+*.pth  binary
+*.pt   binary
+*.bin  binary
+*.zip  binary
+*.ipynb binary

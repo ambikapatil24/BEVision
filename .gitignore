@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------------
+# Data and model weights -- never committed (nuScenes is multi-GB, weights ~65 MB)
+# ---------------------------------------------------------------------------
+v1.0-mini/
+v1.0-trainval/
+v1.0-test/
+samples/
+sweeps/
+maps/
+*.pth
+*.pt
+*.bin
+*.tgz
+*.zip
+data/
+datasets/
+checkpoints/
+
+# ---------------------------------------------------------------------------
+# Evaluation artifacts. The metric JSONs ARE committed -- they are the evidence
+# behind every number in the README. Rendered curve images are regenerable from
+# metrics_details.json, so they stay out.
+# ---------------------------------------------------------------------------
+results/*/plots/
+results/*/*.pdf
+results/*/*.png
+
+# ---------------------------------------------------------------------------
+# Python / notebooks
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+.eggs/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# ---------------------------------------------------------------------------
+# Tooling / OS
+# ---------------------------------------------------------------------------
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Secrets
+# ---------------------------------------------------------------------------
+.env
+*.local
+kaggle.json

@@ -1,0 +1,105 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bevision"
+version = "0.1.0"
+description = "Camera + LiDAR fusion perception for autonomous driving: YOLOv8 + PointPillars -> projection fusion -> Kalman tracking -> BEV, scored with the official nuScenes metrics."
+readme = "README.md"
+license = { text = "MIT" }
+# Python 3.13 is excluded on purpose: mmcv 2.2.0 ships no cp313 wheels and 3.13
+# removed distutils, which its build toolchain still depends on.
+requires-python = ">=3.10,<3.13"
+authors = [{ name = "Ambika Patil", email = "ambikapatil2244@gmail.com" }]
+keywords = [
+    "autonomous-driving",
+    "sensor-fusion",
+    "3d-object-detection",
+    "multi-object-tracking",
+    "nuscenes",
+    "bird-eye-view",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Only dependencies that install cleanly from PyPI, and only the ones the
+# pure-logic core actually needs. `import bevision` must succeed with no
+# torch / OpenMMLab / nuScenes installed -- the perception stack is optional,
+# CUDA-specific, and documented in requirements-cuda.txt instead.
+#
+# numpy is unpinned here on purpose: the geometry/fusion/tracking core is written
+# against the public numpy 2.x API. Only mmdetection3d requires numpy 1.x, so that
+# constraint belongs to the extras that pull it in, not to every user of the core.
+dependencies = [
+    "numpy>=1.22",
+    "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+# Official nuScenes data access + evaluation. The devkit caps numpy below 2.0.
+nuscenes = [
+    "nuscenes-devkit>=1.1.0",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "numpy<2.0.0",
+]
+# 2D camera detector.
+camera = ["ultralytics>=8.2"]
+# Rendering. matplotlib is only needed to actually draw a figure, so it is not a core
+# dependency -- the renderers accept a matplotlib Axes and import it lazily.
+viz = ["matplotlib>=3.7"]
+# Everything installable from PyPI that the pipeline needs end to end.
+#
+# Listed explicitly rather than as a self-reference ("bevision[camera,lidar,...]"): pip would
+# try to resolve "bevision" from an index, and this project is not published there.
+#
+# mmcv and mmdetection3d are deliberately absent -- neither has a portable PyPI wheel, so they
+# come from scripts/install_mmdet3d.sh. See docs/SETUP.md section 2.
+all = [
+    "nuscenes-devkit>=1.1.0",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "ultralytics>=8.2",
+    "mmengine>=0.10.0",
+    "mmdet>=3.2.0",
+    "numpy<2.0.0",
+]
+# 3D LiDAR detector -- install order matters, see README "Install".
+lidar = [
+    "mmengine>=0.10.0",
+    "mmdet>=3.2.0",
+    "numpy<2.0.0",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+bevision-run = "bevision.cli:pipeline_main"
+bevision-eval = "bevision.cli:eval_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# docs/ quotes original notebook code verbatim, as evidence for what changed. Ruff's
+# markdown support would rewrite those fenced blocks into current style, which would
+# misrepresent the code under discussion. There is no Python to lint there anyway.
+extend-exclude = ["docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "RET"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

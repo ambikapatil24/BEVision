@@ -1,0 +1,18 @@
+{
+  "run_tag": "B_6cam",
+  "eval_set": "mini_val",
+  "samples": 81,
+  "scenes": 2,
+  "mAP": 0.2121,
+  "NDS": 0.2,
+  "AMOTA": 0.3466,
+  "MOTA": 0.3303,
+  "recall": 0.5023,
+  "TP": 1718.0,
+  "FP": 546.0,
+  "FN": 1883.0,
+  "IDS": 68.0,
+  "MT": 49.0,
+  "ML": 94.0,
+  "box_order_corrected": true
+}

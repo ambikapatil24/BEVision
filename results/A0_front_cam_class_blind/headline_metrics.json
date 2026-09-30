@@ -1,0 +1,18 @@
+{
+  "run_tag": "A0_front_cam_class_blind",
+  "eval_set": "mini_val",
+  "samples": 81,
+  "scenes": 2,
+  "mAP": 0.0676,
+  "NDS": 0.1138,
+  "AMOTA": 0.0791,
+  "MOTA": 0.0884,
+  "recall": 0.1767,
+  "TP": 1086.0,
+  "FP": 341.0,
+  "FN": 2529.0,
+  "IDS": 54.0,
+  "MT": 35.0,
+  "ML": 133.0,
+  "box_order_corrected": true
+}

@@ -1,0 +1,18 @@
+{
+  "run_tag": "C_6cam_lidar_spawn",
+  "eval_set": "mini_val",
+  "samples": 81,
+  "scenes": 2,
+  "mAP": 0.2133,
+  "NDS": 0.2129,
+  "AMOTA": 0.3404,
+  "MOTA": 0.3027,
+  "recall": 0.5628,
+  "TP": 1925.0,
+  "FP": 640.0,
+  "FN": 1667.0,
+  "IDS": 77.0,
+  "MT": 63.0,
+  "ML": 81.0,
+  "box_order_corrected": true
+}

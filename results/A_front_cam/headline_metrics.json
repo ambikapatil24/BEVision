@@ -1,0 +1,18 @@
+{
+  "run_tag": "A_front_cam",
+  "eval_set": "mini_val",
+  "samples": 81,
+  "scenes": 2,
+  "mAP": 0.0765,
+  "NDS": 0.1181,
+  "AMOTA": 0.1397,
+  "MOTA": 0.1531,
+  "recall": 0.1793,
+  "TP": 1148.0,
+  "FP": 250.0,
+  "FN": 2489.0,
+  "IDS": 32.0,
+  "MT": 39.0,
+  "ML": 135.0,
+  "box_order_corrected": true
+}

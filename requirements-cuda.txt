@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+# GPU / OpenMMLab stack for BEVision.
+#
+# These are deliberately NOT in pyproject.toml: torch wheels are CUDA-specific and
+# mmcv/mmdet wheels are compiled against both a torch version and a CUDA version,
+# so `pip install bevision[lidar]` cannot resolve them portably. Install this file
+# (or scripts/install_mmdet3d.sh, which does the same thing with checks) on the
+# target machine instead.
+#
+# Verified working combination: Python 3.12, CUDA 11.8, T4 GPU.
+# ---------------------------------------------------------------------------
+
+# torch first -- mmcv wheels below must match this exact version.
+--index-url https://download.pytorch.org/whl/cu118
+torch==2.2.0
+torchvision==0.17.0
+
+# ---------------------------------------------------------------------------
+# OpenMMLab. Install mmcv from the prebuilt wheel index that matches
+# (cu118, torch2.2.0); building it from source needs a full CUDA toolchain.
+# ---------------------------------------------------------------------------
+--extra-index-url https://download.openmmlab.com/mmcv/dist/cu118/torch2.2.0/index.html
+mmengine>=0.10.0
+mmcv==2.2.0
+
+# mmdet is installed with --no-deps because its declared numpy constraint pulls
+# numpy 2.x, which mmdetection3d cannot use. See install_mmdet3d.sh.
+mmdet>=3.2.0
+
+# ---------------------------------------------------------------------------
+# Runtime dependencies of the OpenMMLab stack that mmdet expects but --no-deps
+# skips. Pinned because newer transformers/llvmlite break the mmdet3d import.
+# ---------------------------------------------------------------------------
+terminaltables
+transformers<4.50
+
+# PointPillars visualisation and dataset helpers.
+trimesh
+open3d
+plyfile
+lyft-dataset-sdk
+
+# ---------------------------------------------------------------------------
+# numpy MUST be 1.x for mmdetection3d. Install this last, with --force-reinstall,
+# because torch/mmcv/mmdet all try to upgrade it.
+# ---------------------------------------------------------------------------
+numpy<2.0.0
