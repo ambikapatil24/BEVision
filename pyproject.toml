@@ -79,6 +79,13 @@ lidar = [
 dev = [
     "pytest>=8.0",
     "ruff>=0.5",
+    # Test-only, but both are required for `pip install -e ".[dev]" && pytest` to be a
+    # clean run. tests/test_visualization.py imports matplotlib at collection time, so
+    # without it the whole suite aborts with a collection error instead of failing a test.
+    # tests/test_kalman.py skips its filterpy equivalence check when filterpy is absent,
+    # which would silently drop the strongest guarantee on the hand-written Kalman filter.
+    "matplotlib>=3.7",
+    "filterpy>=1.4",
 ]
 
 [project.scripts]

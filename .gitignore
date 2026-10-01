@@ -4,17 +4,21 @@
 v1.0-mini/
 v1.0-trainval/
 v1.0-test/
-samples/
-sweeps/
-maps/
+# Anchored on purpose. A bare `dir/` pattern matches at ANY depth, so an unanchored
+# `data/` once silently excluded the `src/bevision/data/` source package and the repo
+# shipped without it. Dataset and build/environment directories only ever live at the
+# repository root, so they are anchored there and can never swallow a source package.
+/samples/
+/sweeps/
+/maps/
 *.pth
 *.pt
 *.bin
 *.tgz
 *.zip
-data/
-datasets/
-checkpoints/
+/data/
+/datasets/
+/checkpoints/
 
 # ---------------------------------------------------------------------------
 # Evaluation artifacts. The metric JSONs ARE committed -- they are the evidence
@@ -32,13 +36,13 @@ __pycache__/
 *.py[cod]
 *.so
 *.egg-info/
-build/
-dist/
-.eggs/
+/build/
+/dist/
+/.eggs/
 .ipynb_checkpoints/
 .venv/
-venv/
-env/
+/venv/
+/env/
 
 # ---------------------------------------------------------------------------
 # Tooling / OS
@@ -48,7 +52,7 @@ env/
 .mypy_cache/
 .coverage
 coverage.xml
-htmlcov/
+/htmlcov/
 .DS_Store
 Thumbs.db
 
