@@ -5,10 +5,14 @@ Run from the repo root:
 
     python scripts/check_results.py
 
-Exit code is non-zero if any committed artifact's numbers disagree with its
-``headline_metrics.json``, so a table that drifts from the evidence fails loudly instead
-of being noticed a year later. Uses only the standard library, so it runs anywhere the
-perception stack cannot be installed.
+Three things are checked, and the exit code is non-zero if any of them fails:
+
+1. Every run directory carries the full artifact set.
+2. The derived metrics agree with that run's ``headline_metrics.json`` -- two committed files
+   produced independently of each other, so agreement is evidence rather than tautology.
+3. The derived metrics agree with the numbers published in the README.
+
+Uses only the standard library, so it runs anywhere the perception stack cannot be installed.
 """
 
 from __future__ import annotations
@@ -28,6 +32,47 @@ REQUIRED_FILES = (
 )
 
 COLUMNS = ("mAP", "NDS", "AMOTA", "MOTA", "recall")
+
+#: The numbers published in the README's results tables, keyed by run directory and rounded to the
+#: four decimals this script reports. Held here so the README cannot drift away from the committed
+#: artifacts without the check failing; the keys double as the set of runs the README cites.
+PUBLISHED: dict[str, dict[str, float]] = {
+    "A0_front_cam_class_blind": {
+        "mAP": 0.0676,
+        "NDS": 0.1138,
+        "AMOTA": 0.0791,
+        "MOTA": 0.0884,
+        "recall": 0.1767,
+    },
+    "A_front_cam": {
+        "mAP": 0.0765,
+        "NDS": 0.1181,
+        "AMOTA": 0.1397,
+        "MOTA": 0.1531,
+        "recall": 0.1793,
+    },
+    "B0_repro": {
+        "mAP": 0.1913,
+        "NDS": 0.2019,
+        "AMOTA": 0.1071,
+        "MOTA": 0.0922,
+        "recall": 0.4172,
+    },
+    "B_6cam": {
+        "mAP": 0.2121,
+        "NDS": 0.2000,
+        "AMOTA": 0.3466,
+        "MOTA": 0.3303,
+        "recall": 0.5023,
+    },
+    "C_6cam_lidar_spawn": {
+        "mAP": 0.2133,
+        "NDS": 0.2129,
+        "AMOTA": 0.3404,
+        "MOTA": 0.3027,
+        "recall": 0.5628,
+    },
+}
 
 
 def load_run(run_dir: Path) -> tuple[dict, dict, dict]:
@@ -51,6 +96,7 @@ def main() -> int:
         return 1
 
     problems: list[str] = []
+    unpublished: list[str] = []
     rows: list[tuple[str, dict]] = []
 
     for run_dir in run_dirs:
@@ -80,6 +126,17 @@ def main() -> int:
                     f"but the eval summary says {derived[column]}"
                 )
 
+        published = PUBLISHED.get(run_dir.name)
+        if published is None:
+            unpublished.append(run_dir.name)
+        else:
+            for column in COLUMNS:
+                if derived[column] != published[column]:
+                    problems.append(
+                        f"{run_dir.name}: the README publishes {column}={published[column]} "
+                        f"but the artifacts derive {derived[column]}"
+                    )
+
         rows.append((run_dir.name, derived))
 
     # The reproduction check. B0_repro must land on the metrics a change to box *size* handling
@@ -108,18 +165,16 @@ def main() -> int:
     for name, derived in rows:
         print(f"{name:<{name_width}}" + "".join(f"{derived[c]:>9.4f}" for c in COLUMNS))
 
-    expected_runs = {
-        "A0_front_cam_class_blind",
-        "A_front_cam",
-        "B0_repro",
-        "B_6cam",
-        "C_6cam_lidar_spawn",
-    }
-    missing_runs = sorted(expected_runs - {name for name, _ in rows})
+    missing_runs = sorted(set(PUBLISHED) - {name for name, _ in rows})
     if missing_runs:
         print(
             "\nNOTE: run(s) the README cites with no artifact in results/: "
             + ", ".join(missing_runs)
+        )
+    if unpublished:
+        print(
+            "\nNOTE: run(s) in results/ with no published numbers recorded, so only the headline "
+            "cross-check applied: " + ", ".join(sorted(unpublished))
         )
 
     if problems:

@@ -1,8 +1,11 @@
-"""Tests for association and track lifecycle.
+"""Association and track lifecycle.
 
-The centrepiece is ``test_class_aware_matching_prevents_relabelling``, which reproduces
-the defect that cost the original pipeline 3.2x AMOTA: a car track being updated by a
-nearer truck detection and silently becoming a truck.
+Read the two tests under "Why class-consistent association matters" first: they are the reason
+this tracker constrains matching to same-class pairs at all, and the ablation in the README turns
+on them. A track's emitted class comes from the detection it was last updated by, so a wrong-class
+match silently relabels the track -- and because nuScenes scores tracking class by class, that one
+update is counted twice: a false negative for the class it used to be, and a false positive for the
+class it became.
 """
 
 from __future__ import annotations
@@ -38,6 +41,61 @@ def _detection(
 
 def _config(**overrides) -> PerceptionConfig:
     return PerceptionConfig(**overrides)
+
+
+# ---------------------------------------------------------------------------
+# Why class-consistent association matters
+#
+# A track's emitted class is taken from the detection it was last updated by, so a matcher free
+# to pair across classes lets one wrong-class detection relabel the track. nuScenes scores
+# tracking per class, so that single update is counted twice: a false negative for the class the
+# track used to be, and a false positive for the class it became. The two tests below pin both
+# sides of it on the same scene with one config flag changed, which is what makes the README's
+# B0 -> B ablation (AMOTA 0.107 -> 0.347, false positives 1061 -> 546) a single-variable result.
+# ---------------------------------------------------------------------------
+def test_class_aware_matching_prevents_relabelling() -> None:
+    """The car track keeps its class even though a truck box sits nearer to it.
+
+    The nearer wrong-class box is what makes this a test of the objective rather than of a
+    filter: the car detection is farther away, so a distance-only matcher would prefer the
+    truck. Putting the constraint inside the cost matrix is what makes the assignment pick
+    the car instead.
+    """
+    tracker = Tracker(_config(class_aware_track_matching=True))
+    tracker.step([_detection(CAR, "car", (0.0, 0.0, 0.0))])
+
+    tracks, _ = tracker.step(
+        [
+            _detection(TRUCK, "truck", (0.5, 0.0, 0.0)),  # nearer, wrong class
+            _detection(CAR, "car", (2.0, 0.0, 0.0)),  # farther, right class
+        ]
+    )
+
+    car_tracks = [t for t in tracks if t.track_id == 0]
+    assert len(car_tracks) == 1
+    assert car_tracks[0].class_name == "car"
+
+
+def test_class_blind_matching_relabels_into_a_false_negative_and_a_false_positive() -> None:
+    """The counter-example: the same scene with the class constraint off.
+
+    The optimizer takes the nearest detection, so the car track becomes a truck. This is the
+    honest half of the pair -- it documents the behaviour the constraint exists to prevent, and
+    keeping it means the fix stays measurable rather than assumed.
+    """
+    tracker = Tracker(_config(class_aware_track_matching=False))
+    tracker.step([_detection(CAR, "car", (0.0, 0.0, 0.0))])
+
+    tracks, _ = tracker.step(
+        [
+            _detection(TRUCK, "truck", (0.5, 0.0, 0.0)),
+            _detection(CAR, "car", (2.0, 0.0, 0.0)),
+        ]
+    )
+
+    relabelled = [t for t in tracks if t.track_id == 0]
+    assert len(relabelled) == 1
+    assert relabelled[0].class_name == "truck"
 
 
 # ---------------------------------------------------------------------------
@@ -120,49 +178,6 @@ def test_association_is_one_to_one() -> None:
     )
     assert len({row for row, _ in matched}) == len(matched)
     assert len({col for _, col in matched}) == len(matched)
-
-
-# ---------------------------------------------------------------------------
-# The relabelling bug
-# ---------------------------------------------------------------------------
-def test_class_aware_matching_prevents_relabelling() -> None:
-    """A car track must not adopt a nearer truck detection's class."""
-    tracker = Tracker(_config(class_aware_track_matching=True))
-    tracker.step([_detection(CAR, "car", (0.0, 0.0, 0.0))])
-
-    tracks, _ = tracker.step(
-        [
-            _detection(TRUCK, "truck", (0.5, 0.0, 0.0)),  # nearer, wrong class
-            _detection(CAR, "car", (2.0, 0.0, 0.0)),  # farther, right class
-        ]
-    )
-
-    car_tracks = [t for t in tracks if t.track_id == 0]
-    assert len(car_tracks) == 1
-    assert car_tracks[0].class_name == "car"
-
-
-def test_class_blind_matching_relabels_a_track() -> None:
-    """Documents the original behaviour, so the fix stays measurable.
-
-    With no class constraint the optimizer takes the nearest detection, so the car
-    track becomes a truck. Because nuScenes tracking scores class by class, that
-    single update turns one ground-truth car into both a false negative and a phantom
-    truck -- the mechanism behind the 1061 -> 546 false-positive drop.
-    """
-    tracker = Tracker(_config(class_aware_track_matching=False))
-    tracker.step([_detection(CAR, "car", (0.0, 0.0, 0.0))])
-
-    tracks, _ = tracker.step(
-        [
-            _detection(TRUCK, "truck", (0.5, 0.0, 0.0)),
-            _detection(CAR, "car", (2.0, 0.0, 0.0)),
-        ]
-    )
-
-    relabelled = [t for t in tracks if t.track_id == 0]
-    assert len(relabelled) == 1
-    assert relabelled[0].class_name == "truck"
 
 
 # ---------------------------------------------------------------------------
@@ -281,7 +296,7 @@ def test_track_age_and_hits_advance() -> None:
 
 
 def test_filter_position_is_used_for_association() -> None:
-    """The token emitted box follows the filter, not the raw detection."""
+    """The emitted box follows the filter, not the raw detection."""
     tracker = Tracker(_config())
     tracker.step([_detection(CAR, "car", (0.0, 0.0, 0.0))])
     tracker.step([_detection(CAR, "car", (1.0, 0.0, 0.0))])
