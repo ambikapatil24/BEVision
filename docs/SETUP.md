@@ -1,8 +1,9 @@
 # Setup
 
 Section 1 is the developer/test environment and is verified in this repository. Sections 2 and 3
-cover the GPU perception stack and the external dataset; neither can be verified without a GPU
-and a multi-GB download, and the notes below say so where it matters.
+cover the GPU perception stack and the external dataset; both need a GPU and a multi-GB download, so
+they were exercised on Kaggle (Tesla T4, nuScenes mini) rather than in CI. Nothing in this repository
+runs on a schedule — see the notes in each section for what was and was not checked.
 
 ## 1. Developer environment (verified)
 
@@ -56,7 +57,7 @@ PYTHONPATH=src python -m bevision.cli --help
 would create. `--no-build-isolation` also works if the environment already has a recent
 `setuptools`.
 
-## 2. GPU perception stack (not verified in this repository)
+## 2. GPU perception stack
 
 Required to actually run the pipeline. **Python 3.11 or 3.12 only** — mmcv 2.2.0 ships no cp313
 wheel, and Python 3.13 removed `distutils`, which its build toolchain needs.
@@ -96,9 +97,11 @@ print(mmcv.__version__, mmdet.__version__, mmdet3d.__version__, torch.__version_
 ```
 
 The expected shape of the output is four version strings followed by `True`/`False` for CUDA.
-The specific versions this project was built against are listed in `requirements-cuda.txt` and
-under "Stack" in the top-level README; **they have not been re-verified by this repository**, so
-treat them as the combination used to produce `results/`, not as a tested guarantee.
+The versions this project was built against are listed in `requirements-cuda.txt` and under "Stack"
+in the top-level README. The stack has been exercised end-to-end on Kaggle against nuScenes mini —
+`bevision-run` and both `bevision-eval` metrics complete there, and a fresh run reproduces the
+committed `results/` numbers within inference variance. It does not run in CI, so treat the version
+list as the combination used to produce `results/`.
 
 `requirements-cuda.txt` lists the same stack for manual installation.
 

@@ -2,6 +2,18 @@
 
 Meaningful changes to the package, and the current verification status. Newest first.
 
+## Tracking evaluator config loader fixed
+
+`bevision-eval --metrics tracking` failed with "AssertionError: Requested unknown configuration
+tracking_nips_2019". `evaluation.runner._config_factory` preferred
+`nuscenes.eval.detection.config.config_factory`: that try-branch always succeeds, and the detection
+factory resolves only `detection_*` names against `nuscenes/eval/detection/configs/`, so any tracking
+name raised.
+
+It now uses `nuscenes.eval.common.config.config_factory`, which dispatches on the config name's prefix
+and reads `nuscenes/eval/<task>/configs/` — the same factory the devkit's own
+`nuscenes/eval/tracking/evaluate.py` imports. The detection path was unaffected either way.
+
 ## Tracking-evaluation dependency declared
 
 `bevision-eval --metrics tracking` failed with `ModuleNotFoundError: No module named 'motmetrics'`.
@@ -13,8 +25,8 @@ at all — so no plain `pip install nuscenes-devkit` can pull it in.
 1.1.x imports `Iterable` from `collections`, which Python 3.10 removed, so the commonly-suggested
 `motmetrics==1.1.3` pin fails on this project's Python 3.12 runtime.
 
-Verified at import level only — running the tracking evaluator needs the devkit, the dataset and a
-GPU, none of which are available here.
+Confirmed end-to-end on Kaggle (Tesla T4): with this and the config-loader fix in place,
+`bevision-eval --metrics tracking` completes and writes its summary.
 
 ## Package data loader restored
 
@@ -53,11 +65,15 @@ Patterns that legitimately occur at any depth (`__pycache__/`, `*.egg-info/`, `.
 | Test suite | `pytest` | 229 passed, 0 skipped |
 | Result artifacts | `python scripts/check_results.py` | exit 0 — 5 runs consistent |
 | CLI entry points | `bevision-run --help`, `bevision-eval --help` | exit 0 |
+| Full pipeline, both evaluators | `bevision-run` + `bevision-eval` on Kaggle (T4), nuScenes mini | completed |
 
-Verified on Python 3.12 with only the core and `dev` dependencies installed — no GPU, no CUDA and
-no nuScenes dataset.
+The first three rows were verified on Python 3.12 with only the core and `dev` dependencies installed —
+no GPU, no CUDA, no dataset. The fourth needs the GPU stack and the dataset, so it ran on Kaggle.
 
-**Not verified in this repository:** the GPU perception stack (`torch`, `mmcv`, `mmdet`,
-`mmdetection3d`) and anything that needs the nuScenes dataset or the model checkpoints.
-`requirements-cuda.txt` and `scripts/install_mmdet3d.sh` record the target environment; see
-`docs/SETUP.md` section 2.
+A fresh end-to-end `B_6cam` run there reproduces the committed artifacts within inference variance:
+AMOTA 0.343 against 0.3466, MOTA 0.325 against 0.3303, recall 0.514 against 0.5023, and every per-class
+ground-truth count identical (car 2188, pedestrian 1088, motorcycle 224, truck 95, bicycle 41, bus 33).
+The submitted box count differs (4465 against 4434), so the small deltas are fresh-inference variance
+rather than disagreement.
+
+**Not run in CI.** Nothing here executes on a schedule; every row above was run by hand.
