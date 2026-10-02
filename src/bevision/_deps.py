@@ -1,13 +1,11 @@
 """Friendly errors for the optional heavy dependencies.
 
-The core package deliberately does not depend on torch, OpenMMLab, the nuScenes devkit or
-matplotlib -- they are imported lazily, inside the functions that need them, so `import
-bevision` works on a laptop with none of them installed.
+The core package does not depend on torch, OpenMMLab, the nuScenes devkit or matplotlib; they are
+imported lazily, inside the functions that need them, so `import bevision` works without them.
 
-The cost of that design is that a missing dependency surfaces as a bare
-``ModuleNotFoundError`` at the point of use, which does not tell you what to install. This
-module turns that into an actionable message naming the exact extra. It is what a first-time
-user actually needs: the failure mode is normal, but it should be self-explanatory.
+The cost of that design is that a missing dependency surfaces as a bare ``ModuleNotFoundError`` at
+the point of use, which does not say what to install. This module turns it into a message naming
+the exact extra.
 """
 
 from __future__ import annotations

@@ -4,9 +4,9 @@ Draws the LiDAR point cloud, the current frame's detections and the live tracks 
 ego vehicle. Points are coloured by height, which is what makes it readable: the ground plane
 flattens to one colour and everything standing on it separates out.
 
-The transforms are the same ones the pipeline uses — :func:`bevision.geometry.global_to_ego`
-— rather than a second copy. The original notebook had its own ``ego_local`` duplicating that
-maths, which is how the projection bug in ``docs/REFACTORING.md`` survived in three places.
+Frame transforms come from :func:`bevision.geometry.global_to_ego` rather than a second copy, so
+the panel and the pipeline share one implementation of the ego-frame conversion. The plotted
+frame is the ego frame: the ego vehicle sits at the origin with +x forward.
 
 Nothing here inspects a dataset: the inputs are global-frame points and boxes, so a figure can
 be produced from anything that can supply those.

@@ -1,16 +1,14 @@
 """Centralised configuration for the BEVision perception pipeline.
 
-Every threshold, policy switch and frame convention lives here. Nothing in this
-project is allowed to hard-code a magic number -- the ablation in the README is
-only reproducible because each experimental axis is a named field.
+Every threshold, policy switch and frame convention lives here, so that each experimental axis is
+a named field rather than a constant buried in a loop.
 
 The two axes that matter most:
 
-* ``cameras`` -- which cameras the 2D detector runs on. One tuple drives both the
-  single-camera baseline and the six-camera surround model.
-* ``class_aware_track_matching`` -- whether track<->detection association is
-  constrained to same-class pairs. Turning this off reproduces the original,
-  class-blind matcher, which is what makes the ablation measurable.
+* ``cameras`` -- which cameras the 2D detector runs on. One tuple selects either the
+  single-camera configuration or the six-camera surround one.
+* ``class_aware_track_matching`` -- whether track<->detection association is constrained to
+  same-class pairs. ``False`` selects the class-blind matcher.
 """
 
 from __future__ import annotations
@@ -40,9 +38,9 @@ NUSCENES_SAMPLE_PERIOD_S: float = 0.5
 class DetectionClassPolicy(str, Enum):
     """Which classes may appear in the *detection* submission.
 
-    nuScenes scores detection over all ten classes but tracking over only seven,
-    so the two submissions need different class sets. Conflating them silently
-    drops three classes from the detection metrics -- see docs/REFACTORING.md.
+    nuScenes scores detection over all ten classes but tracking over only seven, so the two
+    submissions need different class sets. Conflating them silently drops three classes from the
+    detection metrics.
     """
 
     ALL = "all"
@@ -53,11 +51,11 @@ class DetectionClassPolicy(str, Enum):
 class KalmanConfig:
     """Noise parameters for the constant-velocity 3D Kalman filter.
 
-    Defaults reproduce the original filterpy setup exactly, which matters: the
-    README's reproduction check compares against results produced with them.
+    The defaults match the reference ``filterpy`` configuration the committed results were
+    produced with.
     """
 
-    # filterpy initialises P = I, and the original code then does P *= 5.0.
+    #: Initial state covariance as a multiple of the identity: ``P = initial_covariance · I``.
     initial_covariance: float = 5.0
     measurement_noise: float = 1.0
     process_noise: float = 0.01
@@ -81,8 +79,8 @@ class PerceptionConfig:
     # -- association --------------------------------------------------------
     #: Maximum 3D centre distance (metres) for a track<->detection match.
     track_match_distance_m: float = 3.0
-    #: Constrain track<->detection association to same-class pairs. ``False``
-    #: restores the original class-blind matcher (documented legacy baseline).
+    #: Constrain track<->detection association to same-class pairs. ``False`` selects
+    #: class-blind association, the baseline used by the reproduction check.
     class_aware_track_matching: bool = True
 
     # -- track birth --------------------------------------------------------
@@ -143,7 +141,7 @@ def front_camera_class_aware() -> PerceptionConfig:
 
 
 def front_camera_class_blind() -> PerceptionConfig:
-    """Run A0: single front camera, the original class-blind matcher."""
+    """Run A0: single front camera. Reference class-blind baseline."""
     return PerceptionConfig(
         cameras=FRONT_CAMERA_ONLY,
         class_aware_track_matching=False,
@@ -151,7 +149,7 @@ def front_camera_class_blind() -> PerceptionConfig:
 
 
 def surround_class_blind() -> PerceptionConfig:
-    """Run B0: six cameras, the original class-blind matcher (reproduction check)."""
+    """Run B0: six-camera class-blind baseline used for the reproduction check."""
     return PerceptionConfig(class_aware_track_matching=False)
 
 

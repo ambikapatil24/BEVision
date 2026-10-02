@@ -1,17 +1,11 @@
 """Track management and frame-to-frame association.
 
-Association is Hungarian matching on 3D centre distance, optionally constrained to
-same-class pairs. That constraint is not cosmetic: without it a track can be updated
-by a detection of a different class, and because the emitted class comes from the
-matched detection, the track *becomes* that class. nuScenes tracking scores class by
-class, so a relabelled track is simultaneously a false negative for its old class and
-a false positive for its new one -- which is how the original pipeline manufactured
-hundreds of phantom ``truck`` boxes from car tracks.
-
-Measured on ``mini_val``, adding this constraint nearly halved false positives
-(1061 -> 546), cut identity switches by 42% (118 -> 68) and raised recall
-(0.417 -> 0.502): false positives fall while recall rises, which is the signature of
-a correctness fix rather than a threshold trade-off.
+Association is Hungarian matching on 3D centre distance, optionally constrained to same-class
+pairs. The constraint matters because the emitted class comes from the matched detection: if a
+track could be updated by a detection of a different class, that update would relabel the track.
+nuScenes scores tracking per class, so a relabelled track is simultaneously a false negative for
+its previous class and a false positive for its new one. ``config.class_aware_track_matching``
+selects between the two behaviours.
 """
 
 from __future__ import annotations
@@ -198,8 +192,8 @@ class Tracker:
     def _may_spawn(self, detection: Detection3D) -> bool:
         """Whether an unmatched detection is allowed to start a new track.
 
-        The camera-confirmation requirement is configurable because it is the gate
-        that makes classes absent from COCO impossible to track at all.
+        The camera-confirmation requirement is configurable because it controls whether
+        a detection must be camera-confirmed before it can start a new track.
         """
         if detection.score <= self.config.spawn_score_threshold:
             return False

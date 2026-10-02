@@ -6,16 +6,8 @@
 
 **Box ordering.** ``LiDARInstance3DBoxes.tensor`` stores ``(x, y, z, dx, dy, dz, yaw)`` where
 ``dx`` is the extent along the box's own x-axis — the **length**. nuScenes' submission schema
-expects ``size = (width, length, height)``. The two therefore differ by a swap, and the original
-research code passed ``tensor[3:6]`` straight through, so width and length were transposed in
-every submitted box.
-
-Confirmed empirically on one frame (66 ground-truth boxes with LiDAR points): all six matched
-vehicle boxes had ``dx > dy``, while every ground-truth vehicle has ``length > width``. Read as
-``(w, l, h)`` those predictions were cars 5.5 m wide and 1.4 m long. Re-evaluating the committed
-submissions with *only* ``size`` corrected left **mAP and mATE bit-identical across all five
-runs** (+0.0000) while raising NDS by 0.010–0.023 — the signature of a pure size error, since
-nuScenes matches detection and tracking boxes by centre distance and never consults size.
+expects ``size = (width, length, height)``. The two differ by a swap, so the size field is
+reordered; see :func:`raw_detections_from_tensors`.
 """
 
 from __future__ import annotations
@@ -34,31 +26,23 @@ def raw_detections_from_tensors(
     """Convert mmdet3d's box tensor into :class:`RawDetection3D` objects.
 
     The size field is reordered from mmdet3d's ``(dx, dy, dz)`` = ``(length, width, height)``
-    into nuScenes' ``(width, length, height)``. Split out from the model wrapper so the
-    ordering — the one part of this module that can be wrong silently — is testable without
-    mmdetection3d installed.
+    into nuScenes' ``(width, length, height)``. Split out from the model wrapper so the size
+    ordering can be unit-tested without mmdetection3d installed.
 
     **Box origin.** mmdet3d anchors LiDAR boxes at their **bottom face**
     (``origin = (0.5, 0.5, 0)``), so ``tensor[:, 2]`` is the bottom of the box, not its centre.
     The geometric centre is therefore ``z + dz/2``, and that is what this function returns.
-
-    Getting this wrong is invisible in the centres' xy and in the box size, but shifts every
-    projected box vertically by half its height. Against a real PointPillars run the corner
-    disagreement was *exactly* ``h/2`` for all eight boxes checked (0.809 vs h/2 = 0.810,
-    0.876 vs 0.875, ...) — a ~67 px shift in a 900 px image, which pushed projected boxes off
-    YOLO's 46 px tall boxes entirely and produced **zero** camera confirmations, hence zero
-    tracks and empty submissions.
+    Reading the bottom face as the centre is invisible in the centres' xy and in the box size,
+    but it shifts every projected box vertically by half its height, which is enough to push
+    projected boxes clear of the camera detections entirely.
 
     **Tensor layout.** mmdet3d emits either 7 or 9 columns depending on version and config::
 
         7:  (x, y, z, dx, dy, dz, yaw)
         9:  (x, y, z, dx, dy, dz, yaw, vx, vy)   <- velocity appended
 
-    Both share the leading seven, so the trailing two are dropped. Assuming 7 columns
-    outright raised ``ValueError: cannot reshape array of size 4113 into shape (7)`` against a
-    real PointPillars checkpoint (4113 = 457 boxes x 9) — the first thing the end-to-end smoke
-    run caught, and something no unit test could have, because the fake detector in
-    ``tests/test_pipeline.py`` returns objects rather than a tensor.
+    Both share the leading seven, so the trailing two are dropped and the remaining tensor must
+    be ``(N, 7)``; any other column count raises.
     """
     boxes = np.asarray(boxes, dtype=float)
     if boxes.ndim != 2 or boxes.shape[1] not in (7, 9):

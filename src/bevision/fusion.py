@@ -1,21 +1,17 @@
 """LiDAR-anchored sensor fusion.
 
-The design rule is that LiDAR decides *where* an object is and cameras decide *what* it
-is. A camera can confirm a 3D box and raise its confidence; it can never introduce,
-remove or move one. Depth comes from the point cloud, which is the only sensor here
-that measures it directly.
+LiDAR decides *where* an object is and cameras decide *what* it is: a camera can confirm a 3D box
+and raise its confidence, and can never introduce, remove or move one. Depth comes from the point
+cloud, which is the only sensor here that measures it directly.
 
 Two matching strategies are provided:
 
-* :func:`best_camera_confirmation` -- greedy, one LiDAR box against every camera,
-  keeping the highest-confidence camera that agrees. This is what the reported
-  results use, because a box usually appears in two or three overlapping cameras and
-  the strongest view is the most trustworthy.
-* :func:`iou_matrix_with_class_gate` / :func:`hungarian_match` -- the global optimum
-  over all pairs. The class constraint is folded into the cost matrix itself rather
-  than applied as a filter afterwards, because an optimizer can only respect a
-  constraint that is part of its objective: filtering afterwards lets the assignment
-  spend a slot on a pair that will be discarded, starving a valid pair of its match.
+* :func:`best_camera_confirmation` -- greedy, one LiDAR box against every camera, keeping the
+  highest-confidence confirming camera. A box usually appears in two or three overlapping
+  cameras, so several confirmations are typically available.
+* :func:`iou_matrix_with_class_gate` / :func:`hungarian_match` -- the global optimum over all
+  pairs. The class constraint is folded into the cost matrix rather than applied to the result,
+  so the assignment cannot spend a match on a pair that would then be discarded.
 """
 
 from __future__ import annotations
@@ -79,11 +75,10 @@ class CameraConfirmation:
 def fuse_confidence(lidar_score: float, camera_confidence: float, weight: float = 0.5) -> float:
     """Blend a LiDAR score with a confirming camera confidence.
 
-    Both sensors agreeing is evidence the object is real, so the fused score sits
-    between the two inputs. Note the original code blended against a hard-coded
-    ``1.0`` instead of the camera's actual confidence, which added a constant boost
-    to every match and destroyed the confidence signal -- a match between two
-    uncertain detections (0.20 and 0.30) scored 0.60 rather than 0.25.
+    The result is a weighted mean of the two inputs, so it always lies between them: a confirmed
+    detection is pulled towards the camera's actual confidence. Agreement between the sensors
+    raises the score and disagreement lowers it. ``weight`` is the camera's share and must be in
+    [0, 1].
     """
     if not 0.0 <= weight <= 1.0:
         raise ValueError("weight must be in [0, 1]")

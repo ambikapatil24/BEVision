@@ -5,10 +5,9 @@ The two submissions look similar but are not interchangeable:
 * **Detection** is scored over all ten classes and keys each box by ``detection_name``.
 * **Tracking** is scored over seven classes and keys each box by ``tracking_id``.
 
-Treating them as the same thing silently deletes three classes from the detection metrics,
-which is one of the defects catalogued in docs/REFACTORING.md. They are built by separate
-functions here, and the class sets are read from :mod:`bevision.classes` rather than
-duplicated.
+Treating them as the same thing silently deletes three classes from the detection metrics. They
+are built by separate functions here, and the class sets are read from :mod:`bevision.classes`
+rather than duplicated.
 """
 
 from __future__ import annotations

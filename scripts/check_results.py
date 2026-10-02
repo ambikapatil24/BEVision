@@ -82,11 +82,11 @@ def main() -> int:
 
         rows.append((run_dir.name, derived))
 
-    # The reproduction check. B0 must equal the original notebook's results on the metrics the
-    # box-order fix cannot touch: mAP and AMOTA are both computed from centre distance, never
-    # from box size, so they must stay bit-identical. NDS is reported but deliberately NOT
-    # asserted -- the original passed swapped box sizes straight through, and we fixed that
-    # (docs/REFACTORING.md, Finding 5), so its NDS is expected to move.
+    # The reproduction check. B0_repro must land on the metrics a change to box *size* handling
+    # cannot move: mAP and AMOTA are both computed from centre distance, never from box size, so
+    # they must stay bit-identical. NDS is reported but deliberately NOT asserted, because the
+    # committed submissions had their size field corrected to nuScenes' (width, length, height)
+    # order, which moves mASE and therefore NDS.
     repro = next((row for name, row in rows if name == "B0_repro"), None)
     if repro is not None:
         expected = {"mAP": 0.1913, "AMOTA": 0.1071}
@@ -98,7 +98,7 @@ def main() -> int:
                 )
         print(
             f"\nB0_repro reproduction: mAP={repro['mAP']} AMOTA={repro['AMOTA']} "
-            f"(NDS={repro['NDS']}, reported not asserted -- see REFACTORING.md Finding 5)"
+            f"(NDS={repro['NDS']}, reported not asserted -- see results/README.md)"
         )
 
     name_width = max((len(name) for name, _ in rows), default=8) + 2
