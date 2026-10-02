@@ -1,9 +1,8 @@
 """Official nuScenes evaluator configuration, and headline extraction from its output.
 
-The devkit has moved ``config_factory`` between modules across releases, and has shipped
-both a ``DetectionEval`` and a ``TrackingEval`` under slightly different constructor
-signatures. The compatibility handling lives here so the rest of the package is not
-sprinkled with version checks.
+The devkit has shipped both ``DetectionEval`` and ``TrackingEval`` under slightly different
+constructor signatures across releases, so the compatibility handling lives here rather than
+being sprinkled through the rest of the package.
 """
 
 from __future__ import annotations
@@ -22,11 +21,16 @@ DEFAULT_MAX_BOXES_PER_SAMPLE = 500
 
 
 def _config_factory():
-    """Import ``config_factory`` from wherever this devkit version keeps it."""
-    try:
-        from nuscenes.eval.detection.config import config_factory
-    except ImportError:  # older/newer layout
-        from nuscenes.eval.common.config import config_factory
+    """Import the shared evaluator config loader.
+
+    ``nuscenes.eval.common.config.config_factory`` dispatches on the config name's prefix and reads
+    from ``nuscenes/eval/<task>/configs/``, so it resolves both ``detection_*`` and ``tracking_*``
+    names. The task-specific modules (``nuscenes.eval.detection.config``) resolve only their own
+    task's configs, so handing a tracking name to the detection factory raises
+    "Requested unknown configuration <name>".
+    """
+    from nuscenes.eval.common.config import config_factory
+
     return config_factory
 
 
