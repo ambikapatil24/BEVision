@@ -32,10 +32,11 @@ class ConstantVelocityKalmanFilter:
     """A 3D constant-velocity Kalman filter over global-frame position.
 
     Args:
-        initial_position: Starting ``(x, y, z)``; velocity starts at zero, matching
-            the original filter, which always spawned tracks with zero velocity.
+        initial_position: Starting ``(x, y, z)``. Velocity always starts at zero, so a new
+            track's first prediction is a stationary one.
         dt: Seconds between consecutive samples.
-        config: Noise parameters. Defaults reproduce the original filterpy setup.
+        config: Noise parameters; the defaults match the reference ``filterpy`` configuration
+            the committed results were produced with.
     """
 
     def __init__(
@@ -59,7 +60,7 @@ class ConstantVelocityKalmanFilter:
         self.H = np.zeros((MEASUREMENT_DIM, STATE_DIM), dtype=float)
         self.H[:MEASUREMENT_DIM, :MEASUREMENT_DIM] = np.eye(MEASUREMENT_DIM)
 
-        # filterpy initialises P = I and the original code then scales it by 5.
+        # Initial state covariance: the identity scaled by config.initial_covariance (5.0 default).
         self.P = config.initial_covariance * np.eye(STATE_DIM, dtype=float)
         self.R = config.measurement_noise * np.eye(MEASUREMENT_DIM, dtype=float)
         self.Q = config.process_noise * np.eye(STATE_DIM, dtype=float)

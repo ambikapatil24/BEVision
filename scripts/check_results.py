@@ -93,7 +93,7 @@ def main() -> int:
         for column, value in expected.items():
             if repro[column] != value:
                 problems.append(
-                    f"B0_repro no longer reproduces the original pipeline on {column}: "
+                    f"B0_repro no longer reproduces the expected values on {column}: "
                     f"{repro[column]}, expected {value}"
                 )
         print(
