@@ -19,6 +19,9 @@ v1.0-test/
 /data/
 /datasets/
 /checkpoints/
+# Cloned into the repository root by scripts/install_mmdet3d.sh and by the docs/SETUP.md
+# instructions. It is a dependency checkout, not source, so it stays out of the repository.
+/mmdetection3d/
 
 # ---------------------------------------------------------------------------
 # Evaluation artifacts. The metric JSONs ARE committed -- they are the evidence

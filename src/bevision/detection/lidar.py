@@ -12,10 +12,29 @@ reordered; see :func:`raw_detections_from_tensors`.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 from numpy.typing import ArrayLike
 
 from bevision.types import RawDetection3D
+
+
+def _require_existing(path: str, what: str) -> None:
+    """Fail early, and clearly, when a model path does not exist.
+
+    ``mmengine``'s ``Config.fromfile`` reports a missing config as a bare ``FileNotFoundError``
+    naming only the relative path, with no hint that it was resolved against the working
+    directory. Checking here keeps that explanation in this package.
+    """
+    if not Path(path).is_file():
+        raise FileNotFoundError(
+            f"PointPillars {what} not found: {path}\n"
+            f"  resolved to {Path(path).resolve()}\n"
+            "  Paths are taken relative to the working directory. The mmdetection3d source tree "
+            "supplies the config, and the checkpoint is a separate download; see docs/SETUP.md "
+            "sections 2 and 3."
+        )
 
 
 def raw_detections_from_tensors(
@@ -90,6 +109,9 @@ class MMDet3DLidarDetector:
         from bevision._deps import require  # noqa: PLC0415
 
         require("mmdet3d", "running 3D LiDAR detection")
+        _require_existing(config_path, "config")
+        _require_existing(checkpoint_path, "checkpoint")
+
         from mmdet3d.apis import init_model  # lazy: heavy, and optional
 
         self.model = init_model(config_path, checkpoint_path, device=device)

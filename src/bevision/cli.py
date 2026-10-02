@@ -22,12 +22,44 @@ from bevision.config import (
 )
 from bevision.pipeline import run_pipeline, summarise
 
+#: Written relative to the repository root, which is where scripts/install_mmdet3d.sh clones the
+#: mmdetection3d source tree. `_resolve_input_path` also accepts an absolute path, or a path
+#: relative to the working directory.
 DEFAULT_POINTPILLARS_CONFIG = (
     "mmdetection3d/configs/pointpillars/pointpillars_hv_fpn_sbn-all_8xb4-2x_nus-3d.py"
 )
 DEFAULT_POINTPILLARS_CHECKPOINT = (
     "hv_pointpillars_fpn_sbn-all_4x8_2x_nus-3d_20200620_230405-2fa62f3d.pth"
 )
+
+
+def _repo_root() -> Path | None:
+    """The checkout root, when this package is running from a source tree."""
+    candidate = Path(__file__).resolve().parents[2]
+    return candidate if (candidate / "pyproject.toml").is_file() else None
+
+
+def _resolve_input_path(raw: str, *, what: str, hint: str) -> Path:
+    """Resolve a config or checkpoint path given on the command line.
+
+    Taken as given first -- absolute, or relative to the working directory. The two defaults
+    above are written relative to the repository root, so a working-directory miss is retried
+    against the checkout root; that is what makes the documented defaults work from any working
+    directory. On a genuine miss the error names every path that was tried.
+    """
+    given = Path(raw)
+    if given.is_file():
+        return given
+
+    tried = [f"    {given}  (relative to the working directory {Path.cwd()})"]
+    root = _repo_root()
+    if root is not None and not given.is_absolute():
+        candidate = root / given
+        if candidate.is_file():
+            return candidate
+        tried.append(f"    {candidate}  (relative to the repository root)")
+
+    raise FileNotFoundError(f"{what} not found: {raw}\nTried:\n" + "\n".join(tried) + f"\n{hint}")
 
 
 def build_run_parser() -> argparse.ArgumentParser:
@@ -115,8 +147,23 @@ def pipeline_main(argv: list[str] | None = None) -> int:
     if args.max_frames is not None:
         frames = _take(frames, args.max_frames)
 
+    pointpillars_config = _resolve_input_path(
+        args.pointpillars_config,
+        what="PointPillars config",
+        hint=(
+            "  The mmdetection3d source tree supplies this config. If it is missing, clone it:\n"
+            "    git clone --depth 1 https://github.com/open-mmlab/mmdetection3d.git mmdetection3d\n"
+            "  See docs/SETUP.md section 2."
+        ),
+    )
+    pointpillars_checkpoint = _resolve_input_path(
+        args.pointpillars_checkpoint,
+        what="PointPillars checkpoint",
+        hint="  See docs/SETUP.md section 3 for the download link.",
+    )
+
     lidar_detector = MMDet3DLidarDetector(
-        args.pointpillars_config, args.pointpillars_checkpoint, device=args.device
+        str(pointpillars_config), str(pointpillars_checkpoint), device=args.device
     )
     camera_detector = UltralyticsCameraDetector(
         weights=args.yolo_weights,
