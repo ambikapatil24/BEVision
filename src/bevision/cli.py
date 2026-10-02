@@ -58,7 +58,7 @@ def build_run_parser() -> argparse.ArgumentParser:
         "--association",
         choices=("class-aware", "class-blind"),
         default="class-aware",
-        help="'class-blind' reproduces the original matcher",
+        help="'class-blind' selects class-blind association (the reproduction-check baseline)",
     )
     parser.add_argument(
         "--spawn",

@@ -1,8 +1,8 @@
 """Vectorised 3D geometry: rigid transforms, box corners, projection, overlap.
 
-This module deliberately depends on nothing but numpy. The original notebook used
-``pyquaternion.Quaternion.rotate`` per corner, which is a Python-level method call
-eight times per box per camera; here every operation is a batched matrix product.
+This module deliberately depends on nothing but numpy. Every operation is a batched matrix
+product over the 8 box corners, with no per-corner Python-level calls, so no quaternion library
+is needed.
 
 Frame conventions
 -----------------

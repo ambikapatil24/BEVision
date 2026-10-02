@@ -1,11 +1,9 @@
 """Draw 2D detections onto a camera image, with no image library required.
 
-The original notebook used OpenCV to draw its fusion overlays. Rectangles on a numpy array
-are four slice assignments, so this module needs only numpy — which keeps the visualisation
-path importable and testable on a machine with no OpenCV, and removes cv2 from the render
-dependency surface entirely.
+Rectangles on a numpy array are four slice assignments, so this module needs only numpy: the
+visualisation path stays importable and testable without OpenCV.
 
-Colour convention, kept from the original figures so they stay comparable:
+Colour convention:
 
 * **green** — camera-only detection (YOLO found it, LiDAR did not)
 * **red** — LiDAR-only, projected into the image (no camera agreement)
@@ -23,7 +21,7 @@ from bevision.fusion import CameraDetections
 
 UInt8Image = NDArray[np.uint8]
 
-#: RGB triples, matching the original overlays.
+#: RGB triples per box source.
 BOX_COLOURS: dict[str, tuple[int, int, int]] = {
     "camera": (0, 255, 0),  # green
     "lidar": (255, 0, 0),  # red

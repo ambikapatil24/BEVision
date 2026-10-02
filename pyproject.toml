@@ -104,9 +104,8 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-# docs/ quotes original notebook code verbatim, as evidence for what changed. Ruff's
-# markdown support would rewrite those fenced blocks into current style, which would
-# misrepresent the code under discussion. There is no Python to lint there anyway.
+# docs/ is prose and fenced examples, not Python the linter can act on, so it is excluded
+# rather than linted.
 extend-exclude = ["docs"]
 
 [tool.ruff.lint]

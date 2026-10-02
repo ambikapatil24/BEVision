@@ -4,15 +4,14 @@ The pipeline is written against the protocols in :mod:`bevision.detection`, so i
 against fake detectors in tests and against Ultralytics/mmdetection3d in production without
 changing a line.
 
-Two behaviours here exist because of specific defects found while refactoring the research
-notebook, and both are asserted by tests:
+Two behaviours here are worth noting:
 
-* **The LiDAR→ego transform is computed once per box, not once per box per camera.** The
-  original recomputed it for each of the six cameras and then discarded the result whenever
-  the box turned out to be behind that camera.
+* **The LiDAR→ego transform is computed once per box, not once per box per camera.** The box
+  corners are transformed before the per-camera loop, and each camera then applies only its own
+  extrinsic and rejects boxes that fall behind it.
 * **Detection and tracking submissions use different class sets.** nuScenes scores detection
-  over ten classes and tracking over seven; the original used one filter for both and
-  silently dropped three classes from the detection metrics.
+  over ten classes and tracking over seven; :class:`~bevision.config.DetectionClassPolicy`
+  selects between them.
 """
 
 from __future__ import annotations

@@ -12,8 +12,8 @@ import numpy as np
 from bevision.classes import coco_id_to_nuscenes_name
 from bevision.fusion import CameraDetections
 
-#: Ultralytics' own default. Stated explicitly rather than inherited, because the original
-#: research code depended on it implicitly and any change to it would move the metrics.
+#: Ultralytics' own default. Stated explicitly rather than inherited, because the reported
+#: metrics depend on it and any change to it would move them.
 DEFAULT_CONFIDENCE_THRESHOLD = 0.25
 
 
