@@ -47,6 +47,11 @@ nuscenes = [
     "nuscenes-devkit>=1.1.0",
     "pandas>=2.0",
     "matplotlib>=3.7",
+    # The devkit's tracking evaluator imports motmetrics (nuscenes/eval/tracking/mot.py), but the
+    # devkit stopped installing it by default in Dec 2020 and 1.2.0 declares no optional extras at
+    # all -- so without this, `bevision-eval` fails on the tracking half. >=1.4.0 because motmetrics
+    # 1.1.x imports Iterable from collections, which Python 3.10 removed.
+    "motmetrics>=1.4.0",
     "numpy<2.0.0",
 ]
 # 2D camera detector.
@@ -65,6 +70,7 @@ all = [
     "nuscenes-devkit>=1.1.0",
     "pandas>=2.0",
     "matplotlib>=3.7",
+    "motmetrics>=1.4.0",
     "ultralytics>=8.2",
     "mmengine>=0.10.0",
     "mmdet>=3.2.0",

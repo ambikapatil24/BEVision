@@ -2,6 +2,20 @@
 
 Meaningful changes to the package, and the current verification status. Newest first.
 
+## Tracking-evaluation dependency declared
+
+`bevision-eval --metrics tracking` failed with `ModuleNotFoundError: No module named 'motmetrics'`.
+The devkit's tracking evaluator imports `motmetrics` (`nuscenes/eval/tracking/mot.py`), but the devkit
+stopped installing it by default in Dec 2020, and `nuscenes-devkit` 1.2.0 declares no optional extras
+at all — so no plain `pip install nuscenes-devkit` can pull it in.
+
+`motmetrics>=1.4.0` is now in the `nuscenes` and `all` extras. The lower bound matters: motmetrics
+1.1.x imports `Iterable` from `collections`, which Python 3.10 removed, so the commonly-suggested
+`motmetrics==1.1.3` pin fails on this project's Python 3.12 runtime.
+
+Verified at import level only — running the tracking evaluator needs the devkit, the dataset and a
+GPU, none of which are available here.
+
 ## Package data loader restored
 
 The `.gitignore` rule `data/` was unanchored, so git matched it at every directory depth and it
